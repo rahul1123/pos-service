@@ -225,6 +225,7 @@ console.log(query)
     const client = await this.pool.connect();
     try {
       const result = await client.query(query, params);
+      console.log(query,'query')
       return result.rows;
     } finally {
       client.release();

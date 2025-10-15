@@ -4,6 +4,8 @@ import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as compression from 'compression';
 import helmet from 'helmet';
+import * as cookieParser from 'cookie-parser';
+import * as csurf from 'csurf'
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger: ['error', 'warn', 'log', 'debug', 'verbose'],
@@ -11,6 +13,7 @@ async function bootstrap() {
   // Security & performance middlewares
   app.use(compression());
   app.use(helmet());
+  app.use(cookieParser()); 
   //  app.useGlobalPipes(
   //   new ValidationPipe({
   //     whitelist: true,      // strips unknown fields
@@ -26,13 +29,37 @@ async function bootstrap() {
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });
+  //add csrf token to protect the access of the api by CSRF protection 
+    app.use(
+    csurf({
+      cookie: {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: false, // true if HTTPS
+      },
+    }),
+  );
+
+  // app.use(
+  //   csurf({
+  //     cookie: {
+  //       httpOnly: true,   // can't be accessed by JS
+  //       secure: process.env.NODE_ENV === 'local',  // when file upload on aws --production // only over HTTPS
+  //       sameSite: 'strict', // prevent cross-site sending
+  //     },
+  //   }),
+  // );
 
   // Only enable Swagger in non-production environments
   if (process.env.ENVIRONMENT !== 'Production') {
     const config = new DocumentBuilder()
       .setTitle('Your API Title')
       .setDescription('API description')
-      .setVersion('1.0')
+      .setVersion('1.0').addBearerAuth()
+  .addApiKey(
+    { type: 'apiKey', name: 'X-CSRF-Token', in: 'header' },
+    'csrf-token',
+  )
       .build();
 
     const document = SwaggerModule.createDocument(app, config);
