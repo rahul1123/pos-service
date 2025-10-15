@@ -16,92 +16,6 @@ export class UserService {
     
   ) {
   }
-
-  async loginAdmin(req) {
-
-    let email = req.email;
-    let password = req.password;
-    let adminUser = await this.checkAdminUser(email, password);
-    if (adminUser != null) {
-      const token = this.AuthService.getToken(adminUser.id, adminUser.email);
-      let result: any = {
-        type: "admin",
-        user: adminUser,
-        token
-      };
-      console.log(token, 'generated token')
-      let query = `UPDATE users SET token='${token}' WHERE id=${adminUser.id}`;
-      const execution = await this.dbService.execute(query);
-      return this.utilService.successResponse(result, "Admin found");
-    }
-    return this.utilService.failResponse("Invalid credentials");
-  }
-
-  async register(req) {
-    try {
-      // Check if email already exists
-      let userEmail = await this.getUserByEmail(req.email);
-      if (userEmail != null) {
-        return this.utilService.failResponse("Email already exists");
-      }
-
-      // Check if phone number already exists
-      let userPhone = await this.getUserByPhone(req.phone);
-      if (userPhone != null) {
-        return this.utilService.failResponse("Phone number already exists");
-      }
-
-      // Hash the password
-      let hashPass = await bcrypt.hash(req.password, 12);
-
-      // Prepare insert data
-      let setData: { set: string; value: any }[] = [];
-      setData.push(this.utilService.getInsertObj("first_name", req.first_name));
-      setData.push(this.utilService.getInsertObj("last_name", req.last_name));
-      setData.push(this.utilService.getInsertObj("email", req.email));
-      setData.push(this.utilService.getInsertObj("phone", req.phone));
-      setData.push(this.utilService.getInsertObj("password", hashPass));
-      setData.push(this.utilService.getInsertObj("created_dt", this.utilService.getMomentDT())); // fixed typo here
-
-      // Insert into DB
-      const insertedUser = await this.dbService.insertData("users", setData);
-      console.log(insertedUser, 'full insertion object');
-
-      if (insertedUser) {
-        // const user = await this.getUserById(insertedUser);
-        // const token = this.AuthService.getToken(user.id, user.email);
-        // user.token = token;
-
-        return this.utilService.successResponse(insertedUser, "User registered successfully");
-      } else {
-        return this.utilService.failResponse("User registration failed. Please try again.");
-      }
-
-    } catch (error) {
-      console.error("Registration Error:", error);
-      return this.utilService.failResponse("Something went wrong during registration. Please try again.");
-    }
-  }
-
-  async getUserByEmail(email) {
-    let query = "SELECT  * FROM users WHERE email='" + email + "'";
-    let list: any = await this.dbService.execute(query);
-    if (list.length > 0) {
-      return list[0];
-    } else {
-      return null;
-    }
-  }
-  async getUserByPhone(phone) {
-    let query = "SELECT * FROM users WHERE phone='" + phone + "'";
-    let list: any = await this.dbService.execute(query);
-    if (list.length > 0) {
-      return list[0];
-    } else {
-      return null;
-    }
-  }
-
   //get All userlist from the table 
   async getAllUsers() {
     const query = `SELECT * FROM "users" ORDER BY id Desc;`;
@@ -147,19 +61,6 @@ export class UserService {
     } catch (error) {
       console.error("Admin Login Error:", error);
       return null;
-    }
-  }
-
-
-
-
-  async getAllSalesEmployees() {
-    const query = `SELECT id, first_name, last_name, email, mobile, gender, profile_img, profile, dob, designation, department, reporting_manager, status, password, created_at, updated_at FROM users WHERE department = 'Sales' and status = 1`
-    const list = await this.dbService.execute(query);
-    if (list.length > 0) {
-      return this.utilService.successResponse(list, "Sales Employees found");
-    } else {
-      return this.utilService.failResponse("No Sales Employees Found")
     }
   }
 
