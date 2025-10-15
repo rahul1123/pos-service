@@ -29,23 +29,27 @@ export class AuthService {
   ) {
 
   }
-  async signUp(request: { email: string; password: string; name: string, phone_number: string, role: string }): Promise<any> {
+  async signUp(request: { email: string; password: string;   role: string }): Promise<any> {
     try {
-      const { email, password, name, phone_number, role } = request;
+      const { email, password, role } = request;
+      const passwordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (!passwordRegex.test(password)) {
+      throw new BadRequestException(
+        'Password must have at least 8 characters, one uppercase letter, one lowercase letter, one number, and one special character.'
+      );
+    }
       const hashedPassword = await bcrypt.hash(password, 10); // 10 is the salt rounds
       const usercreatePayload = {
-        name: name,
         email,
+        password_hash: hashedPassword,
+        role: 'rep',
         created_dt: new Date(),
-        email_verified: 0,
-        phone_verified: 0,
-        password: hashedPassword,
-        role: role,
+        
       };
       // Optional DB sync
       return await this.createUser(usercreatePayload);
     } catch (error) {
-
       throw new BadRequestException(error.message || 'Signup failed');
     }
   }
@@ -66,13 +70,10 @@ export class AuthService {
 
   async createUser(usercreatePayload) {
     try {
-      //const hashedPassword = await bcrypt.hash(usercreatePayload.password, 10); // 10 is the salt rounds
       const setData = [
-        { set: 'name', value: String(usercreatePayload.name) },
         { set: 'email', value: String(usercreatePayload.email) },
-        { set: 'password', value: String(usercreatePayload.password ?? '') },
-        { set: 'phone', value: String(usercreatePayload.phone_number ?? '') },
-        // { set: 'role', value: String(usercreatePayload.role ?? '') },
+        { set: 'password_hash', value: String(usercreatePayload.password ?? '') },
+       { set: 'role', value: String(usercreatePayload.role ?? '') },
       ]
       const insertion = await this.dbService.insertData('users', setData);
       return this.utilService.successResponse(insertion, 'User created successfully.');
@@ -85,17 +86,11 @@ export class AuthService {
   async signIn(request: { email: string; password: string }): Promise<any> {
     try {
       const { email, password } = request;
-      const user = await this.dbService.execute(`select id,name,password,status,role from users where email='${email}'`); // implement this method
-      console.log(user,'user')
+      const user = await this.dbService.execute(`select * from users where email='${email}'`); // implement this method
       if (!user || user.length === 0) {
         throw new UnauthorizedException('Invalid email or password');
       }
-
-      // 2. Check if user is active
-      if (user[0]?.status !== 1) {
-        throw new UnauthorizedException('User is not active');
-      }
-      const isMatch = await bcrypt.compare(password, user[0].password);
+      const isMatch = await bcrypt.compare(password, user[0].password_hash);
       if (!isMatch) {
         throw new UnauthorizedException('Invalid email or password');
       }
@@ -106,8 +101,14 @@ export class AuthService {
       const accessToken = await this.jwtService.signAsync(payload, {
         expiresIn: '1h',
       });
+
+       // Generate Refresh Token (7 days)
+    const refreshToken = await this.jwtService.signAsync(payload, {
+      expiresIn: '7d',
+    });
       return {
         accessToken,
+        refreshToken,
         id: user[0].id,
         name: user[0].name,
 
