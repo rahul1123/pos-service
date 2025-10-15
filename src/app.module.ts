@@ -9,8 +9,6 @@ import { ErrorLoggerService } from './error-logger/error-logger.service';
 import { AesService } from './services/aes/aes.service';
 import { AuthService } from './auth/auth.service';
 import { JwtService } from '@nestjs/jwt';
-import { UserService } from './user/user.service';
-import { UserController } from './user/user.controller';
 import { AuthController } from './auth/auth.controller';
 import { JwtModule } from '@nestjs/jwt';
 import { ClusterService } from "./services/cluster/cluster.service";
@@ -30,8 +28,8 @@ import { AccountService} from './accounts/account.service';
         signOptions: { expiresIn: '15m' },
       }),
     }),],
-  controllers: [AppController,UserController,AuthController,LeadController,AccountController],
-  providers: [AppService,UtilService,DbService,ErrorLoggerService,AesService,AuthService,UserService,
+  controllers: [AppController,AuthController,LeadController,AccountController],
+  providers: [AppService,UtilService,DbService,ErrorLoggerService,AesService,AuthService,
     AuthService,ClusterService,LeadService,AccountService],
 })
 //with middle ware 
