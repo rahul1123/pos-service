@@ -18,6 +18,10 @@ import { LeadController } from './leads/leads.controller';
 import { LeadService} from './leads/leads.service';
 import { AccountController} from './accounts/account.controller';
 import { AccountService} from './accounts/account.service';
+import { ThrottlerModule, ThrottlerModuleOptions } from '@nestjs/throttler';
+
+import { RateLimitMiddleware } from './middleware/rate-limit.middleware';
+//issue in version of throttler so i replaced with custom function 
 @Module({
   imports: [ConfigModule.forRoot({
       isGlobal: true, // So you can use ConfigService anywhere without importing again
@@ -40,7 +44,9 @@ import { AccountService} from './accounts/account.service';
   {
  configure(consumer: MiddlewareConsumer) {
     consumer
-      .apply(ApiMiddleware).exclude()
+      .apply(ApiMiddleware,
+        (req, res, next) => new RateLimitMiddleware(60000, 5).use(req, res, next),  // Implement rate limitter
+      ).exclude()
       .forRoutes('*')
   }
 

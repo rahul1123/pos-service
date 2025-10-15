@@ -118,7 +118,7 @@ async findOne(id: string) {
     }
   }
 
-  // 📌 Delete Reseller
+  // 
   async remove(id: string) {
     try {
       const query = 'DELETE FROM accounts  WHERE id = $1 RETURNING *';

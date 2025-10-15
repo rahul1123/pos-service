@@ -232,7 +232,12 @@ async create(dto: CreateLeadDto) {
     // }
 
     query += ` ORDER BY created_at DESC`;
+    console.log(query,'query print for filter')
+    let result= await this.dbService.executeQuery(query, params);
+    if (result.length === 0) {
+        throw new NotFoundException(`No Record , not found`);
+      }
 
-    return  this.dbService.executeQuery(query, params);
+      return this.utilService.successResponse( 'Leads Records Found');
   }
 }

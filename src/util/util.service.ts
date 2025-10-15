@@ -378,7 +378,9 @@ export class UtilService {
     .digest('base64');
 }
 
-
+  formatDate(date: Date) {
+    return date.toISOString().split('T')[0]; // returns 'YYYY-MM-DD'
+  }
   
 }
 

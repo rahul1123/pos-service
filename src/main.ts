@@ -6,6 +6,7 @@ import * as compression from 'compression';
 import helmet from 'helmet';
 import * as cookieParser from 'cookie-parser';
 import * as csurf from 'csurf'
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger: ['error', 'warn', 'log', 'debug', 'verbose'],
@@ -13,14 +14,15 @@ async function bootstrap() {
   // Security & performance middlewares
   app.use(compression());
   app.use(helmet());
-  app.use(cookieParser()); 
-  //  app.useGlobalPipes(
-  //   new ValidationPipe({
-  //     whitelist: true,      // strips unknown fields
-  //     forbidNonWhitelisted: true, // throw error if unknown fields
-  //     transform: true,      // auto-transform payloads to DTO classes
-  //   }),
-  // );
+  app.use(cookieParser());
+  //called the ● 	Input validation (Nest JS class validation)  
+   app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,      // strips unknown fields
+      forbidNonWhitelisted: true, // throw error if unknown fields
+      transform: true,      // auto-transform payloads to DTO classes
+    }),
+  );
   // CORS configuration
   app.enableCors({
     origin: [
